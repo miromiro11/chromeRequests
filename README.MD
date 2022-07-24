@@ -4,7 +4,7 @@ A python package that mimics chromes TLS using golang
 
 ## Installation
 
-Install my-project with npm
+Instll chromeRequests using pip
 
 ```bash
   pip install chromeRequests
