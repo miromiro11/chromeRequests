@@ -1,7 +1,6 @@
-
 # chromeRequests
-A python package that is able to mimic chromes TLS using golang and cgo to do so.
 
+A python package that mimics chromes TLS using golang
 
 ## Installation
 
@@ -10,8 +9,9 @@ Install my-project with npm
 ```bash
   pip install chromeRequests
 ```
-    
+
 ## API Reference
+
 ```py
 from chromeRequests import chromeRequests
 
@@ -57,27 +57,21 @@ session.delHeaders({"test":""})
 
 ```
 
-
 ## Acknowledgements
 
- - [Mimic By Sauce](https://github.com/saucesteals/mimic)
-
+- [Mimic By Sauce](https://github.com/saucesteals/mimic)
 
 ## Authors
 
 - [@Miro](https://github.com/miromiro11)
 
-
-
 ## To do
 
-- [ ]  Speed Improvement
-- [ ]  Same syntax as pythons [Request Library](https://pypi.org/project/requests/)
-
+- [ ] Speed Improvement
+- [ ] Same syntax as pythons [Request Library](https://pypi.org/project/requests/)
 
 ## Contributing
 
 Contributions are always welcome!
 
 Please adhere to this project's `code of conduct`.
-
