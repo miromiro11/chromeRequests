@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"net/url"
 
+	"github.com/google/uuid"
 	http "github.com/saucesteals/fhttp"
 	"github.com/saucesteals/mimic"
 )
@@ -20,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 )
 
 var Sessions =  make(map[string]Session)
@@ -110,15 +110,14 @@ func removeHeaders(Params *C.char) {
 
 //export createSession
 func createSession(proxy *C.char) *C.char {
-	proxy_ := C.GoString(proxy)
-	newUUID, err := exec.Command("uuidgen").Output()
-	newUUID = newUUID[:len(newUUID)-1]
-	check(err)
-	Sessions[string(newUUID)] = Session{
-		Client:  &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
-		Headers: make(map[string]string),
-	}
-	return C.CString(string(newUUID))
+    proxy_ := C.GoString(proxy)
+    newUUID_ := uuid.New()
+    newUUID := newUUID_.String()
+    Sessions[string(newUUID)] = Session{
+        Client:  &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
+        Headers: make(map[string]string),
+    }
+    return C.CString(string(newUUID))
 }
 
 //export getMap
