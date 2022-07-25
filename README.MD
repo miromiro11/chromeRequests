@@ -43,6 +43,15 @@ headers = response.headers
 status = response.status_code
 text = response.text
 
+#put request
+response = chromeRequests.put(
+    "example.com",
+    headers = {
+        "foo":"bar",
+    },
+    json = {"foo":"bar"},
+    data = {"foo":"bar"}
+)
 #session
 
 session = chromeRequests.Session()
