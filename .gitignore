@@ -2,3 +2,8 @@
 *.pyc
 dist
 examples.py
+chromeRequests.egg-info/dependency_links.txt
+chromeRequests.egg-info/PKG-INFO
+chromeRequests.egg-info/requires.txt
+chromeRequests.egg-info/SOURCES.txt
+chromeRequests.egg-info/top_level.txt

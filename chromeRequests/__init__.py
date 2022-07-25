@@ -1,1 +1,1 @@
-from .chromeRequests import get, post, loadLibrary, Response
+from .chromeRequests import get, post, loadLibrary, Response, put

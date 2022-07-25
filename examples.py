@@ -7,3 +7,4 @@ session = chromeRequests.chromeRequests.Session()
 
 resp = session.put("https://www.httpbin.org/put", data = {"test":"test"})
 
+print(resp.text)
