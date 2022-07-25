@@ -1,6 +1,7 @@
 import ctypes
 import json
 from urllib import request
+import json as toJson
 
 
 #load library from where the current file is located no matter where it is run from
@@ -31,6 +32,12 @@ class Response:
         self.text = payload["Body"]
         self.cookies = payload["Cookies"]
         self.headers = payload["Headers"]
+
+    def json(self):
+        try:
+            return toJson.loads(self.text)
+        except Exception as e:
+            raise(e)
 
     def __str__(self):
         return str(self.status_code)
