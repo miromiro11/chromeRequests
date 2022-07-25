@@ -102,21 +102,21 @@ def put(url, **kwargs):
 class Session:
     def __init__(self, proxy=""):
         checkLibrary()
-        self.session = library.createSession
-        self.session.restype = ctypes.c_void_p
-        self.request = library.request
-        self.request.restype = ctypes.c_void_p
-        self.changeProxy = library.changeProxy
-        self.changeProxy.restype = ctypes.c_void_p
-        self.addHeaders = library.addHeaders
-        self.addHeaders.restype = ctypes.c_void_p
-        self.removeHeaders = library.removeHeaders
-        self.removeHeaders.restype = ctypes.c_void_p
-        self.addCookies = library.addCookies
-        self.addCookies.restype = ctypes.c_void_p
-        self.removeCookies = library.removeCookies
-        self.removeCookies.restype = ctypes.c_void_p
-        self.uuid = pullFromMem(self.session(proxy.encode('utf-8')))
+        self.__session = library.createSession
+        self.__session.restype = ctypes.c_void_p
+        self.__request = library.request
+        self.__request.restype = ctypes.c_void_p
+        self.__changeProxy = library.changeProxy
+        self.__changeProxy.restype = ctypes.c_void_p
+        self.__addHeaders = library.addHeaders
+        self.__addHeaders.restype = ctypes.c_void_p
+        self.__removeHeaders = library.removeHeaders
+        self.__removeHeaders.restype = ctypes.c_void_p
+        self.__addCookies = library.addCookies
+        self.__addCookies.restype = ctypes.c_void_p
+        self.__removeCookies = library.removeCookies
+        self.__removeCookies.restype = ctypes.c_void_p
+        self.uuid = pullFromMem(self.__session(proxy.encode('utf-8')))
 
     def setProxy(self, proxy):
         payload = {
@@ -124,35 +124,35 @@ class Session:
             "proxy": proxy,
         }
         load = json.dumps(payload).encode('utf-8')
-        self.changeProxy(load)
+        self.__changeProxy(load)
 
-    def setCookies(self,cookies):
+    def addCookies(self,cookies):
         payload = {
             "session": self.uuid,
             "cookies": cookies,
         }
-        self.addCookies(json.dumps(payload).encode('utf-8'), self.uuid)
+        self.__addCookies(json.dumps(payload).encode('utf-8'), self.uuid)
 
-    def delCookies(self,cookies):
+    def removeCookies(self,cookies):
         payload = {
             "Session": self.uuid,
             "Cookies": cookies,
         }
-        self.removeCookies(json.dumps(payload).encode('utf-8'), self.uuid)
+        self.__removeCookies(json.dumps(payload).encode('utf-8'), self.uuid)
 
-    def setHeaders(self, headers):
+    def addHeaders(self, headers):
         payload = {
             "Session": self.uuid,
             "Headers": headers,
         }
-        self.addHeaders(json.dumps(payload).encode('utf-8'), self.uuid)
+        self.__addHeaders(json.dumps(payload).encode('utf-8'), self.uuid)
 
-    def delHeaders(self, headers: dict):
+    def removeHeaders(self, headers: dict):
         payload = {
             "Session": self.uuid,
             "Headers": headers,
         }
-        self.removeHeaders(json.dumps(payload).encode('utf-8'), self.uuid)
+        self.__removeHeaders(json.dumps(payload).encode('utf-8'), self.uuid)
 
     def get(self, url, **kwargs):
         payload = {
@@ -169,7 +169,7 @@ class Session:
                 raise Exception(f"{item} is not an accepted PARAM")
         payload['paramters']['headers'] = kwargs.get("headers", [])
         payload['paramters']['proxy'] = kwargs.get("proxy", "")
-        response = self.request(json.dumps(payload).encode('utf-8'))
+        response = self.__request(json.dumps(payload).encode('utf-8'))
         return Response(pullFromMem(response))
 
     def post(self, url, **kwargs):
@@ -187,7 +187,7 @@ class Session:
         payload['paramters']['headers'] = kwargs.get("headers", {})
         payload['paramters']['Json'] = json.dumps(kwargs.get("json", {}))
         payload['paramters']['FORM'] = kwargs.get("data", [])
-        response = self.request(json.dumps(payload).encode('utf-8'))
+        response = self.__request(json.dumps(payload).encode('utf-8'))
         return Response(pullFromMem(response))
     
     def put(self, url, **kwargs):
@@ -205,6 +205,6 @@ class Session:
         payload['paramters']['headers'] = kwargs.get("headers", {})
         payload['paramters']['Json'] = json.dumps(kwargs.get("json", {}))
         payload['paramters']['FORM'] = kwargs.get("data", [])
-        response = self.request(json.dumps(payload).encode('utf-8'))
+        response = self.__request(json.dumps(payload).encode('utf-8'))
         return Response(pullFromMem(response))
 

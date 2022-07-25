@@ -4,7 +4,7 @@ import chromeRequests
 chromeRequests.loadLibrary("./GoLangSource/library.so")
 
 session = chromeRequests.chromeRequests.Session()
-session.setCookies({
+session.addCookies({
     "name": "cookie1",
     "value": "value1",
     "domain": "www.google.com",
@@ -12,7 +12,7 @@ session.setCookies({
     "secure": False,
 })
 
-session.delCookies({
+session.removeCookies({
     "name": "cookie1",
 })
 
