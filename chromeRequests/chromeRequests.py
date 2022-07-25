@@ -74,6 +74,24 @@ def post(url, **kwargs):
     return Response(pullFromMem(response))
 
 
+def put(url, **kwargs):
+    checkLibrary()
+    payload = {
+        "session": "",
+        "requestType": "POST",
+        "paramters": {
+            "url": url,
+        },
+    }
+    allowedParams = ['json', 'proxy', 'headers', 'data']
+    for item in kwargs:
+        if not item in allowedParams:
+            raise Exception(f"{item} is not an accepted PARAM")
+    payload['paramters']['headers'] = kwargs.get("headers", [])
+    payload['paramters']['JSON'] = json.dumps(kwargs.get("json", []))
+    response = request(json.dumps(payload).encode('utf-8'))
+    return Response(pullFromMem(response))
+
 class Session:
     def __init__(self, proxy=""):
         checkLibrary()
@@ -144,6 +162,24 @@ class Session:
         payload['paramters']['headers'] = kwargs.get("headers", {})
         payload['paramters']['Json'] = json.dumps(kwargs.get("json", {}))
         payload['paramters']['FORM'] = kwargs.get("data", [])
-        print(json.dumps(payload))
         response = self.request(json.dumps(payload).encode('utf-8'))
         return Response(pullFromMem(response))
+    
+    def put(self, url, **kwargs):
+        payload = {
+            "session": self.uuid,
+            "requestType": "PUT",
+            "paramters": {
+                "url": url,
+            },
+        }
+        allowedParams = ['json', 'proxy', 'headers', 'data']
+        for item in kwargs:
+            if not item in allowedParams:
+                raise Exception(f"{item} is not an accepted PARAM")
+        payload['paramters']['headers'] = kwargs.get("headers", {})
+        payload['paramters']['Json'] = json.dumps(kwargs.get("json", {}))
+        payload['paramters']['FORM'] = kwargs.get("data", [])
+        response = self.request(json.dumps(payload).encode('utf-8'))
+        return Response(pullFromMem(response))
+

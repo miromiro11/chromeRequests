@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 )
 
-var Sessions =  make(map[string]Session)
+var Sessions = make(map[string]Session)
 var userAgent = fmt.Sprintf("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s Safari/537.36", m.Version())
 var latestVersion = mimic.MustGetLatestVersion(mimic.PlatformWindows)
 var m, _ = mimic.Chromium(mimic.BrandChrome, latestVersion)
@@ -31,34 +31,35 @@ var globalHeaders = make(map[string]string)
 var cleanTransport = &http.Transport{}
 
 type Session struct {
-	Client *http.Client
-	Headers map[string]string
+	Client    *http.Client
+	Headers   map[string]string
+	Randomize bool
 }
 
 type Response struct {
 	StatusCode int
 	Body       string
-	Cookies   map[string]string
-	Headers   map[string]string
+	Cookies    map[string]string
+	Headers    map[string]string
 }
 
 type RequestParameters struct {
-	URL     string   `json:"url"`
-	Proxy   string   `json:"proxy"`
+	URL     string            `json:"url"`
+	Proxy   string            `json:"proxy"`
 	Headers map[string]string `json:"headers"`
-	Form    map[string]string   `json:"FORM"`
-	Json   string   `json:"JSON"`
+	Form    map[string]string `json:"FORM"`
+	Json    string            `json:"JSON"`
 }
 
-type sessionParamters struct{
-	Session string `json:"session"`
-	RequestType string `json:"requestType"`
-	Paramters RequestParameters `json:"paramters"`
-	Proxy string `json:"proxy"`
+type sessionParamters struct {
+	Session     string            `json:"session"`
+	RequestType string            `json:"requestType"`
+	Paramters   RequestParameters `json:"paramters"`
+	Proxy       string            `json:"proxy"`
 }
 
-type headerChange struct{
-	Session string `json:"session"`
+type headerChange struct {
+	Session string            `json:"session"`
 	Headers map[string]string `json:"headers"`
 }
 
@@ -77,8 +78,9 @@ func check(err error) {
 		panic(err)
 	}
 }
+
 //export changeProxy
-func changeProxy(params *C.char){
+func changeProxy(params *C.char) {
 	var sessionParameters sessionParamters
 	json.Unmarshal([]byte(C.GoString(params)), &sessionParameters)
 	proxy := sessionParameters.Proxy
@@ -86,7 +88,7 @@ func changeProxy(params *C.char){
 	Sessions[session].Client.Transport = m.ConfigureTransport(createTransport(proxy))
 }
 
-//export addHeaders 
+//export addHeaders
 func addHeaders(Params *C.char) {
 	var sessionParameters headerChange
 	json.Unmarshal([]byte(C.GoString(Params)), &sessionParameters)
@@ -97,7 +99,7 @@ func addHeaders(Params *C.char) {
 	}
 }
 
-//export removeHeaders 
+//export removeHeaders
 func removeHeaders(Params *C.char) {
 	var sessionParameters headerChange
 	json.Unmarshal([]byte(C.GoString(Params)), &sessionParameters)
@@ -110,20 +112,15 @@ func removeHeaders(Params *C.char) {
 
 //export createSession
 func createSession(proxy *C.char) *C.char {
-    proxy_ := C.GoString(proxy)
-    newUUID_ := uuid.New()
-    newUUID := newUUID_.String()
-    Sessions[string(newUUID)] = Session{
-        Client:  &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
-        Headers: make(map[string]string),
-    }
-    return C.CString(string(newUUID))
-}
-
-//export getMap
-func getMap() *C.char{
-	json, _ := json.Marshal(Sessions)
-	return C.CString(string(json))
+	proxy_ := C.GoString(proxy)
+	newUUID_ := uuid.New()
+	newUUID := newUUID_.String()
+	Sessions[string(newUUID)] = Session{
+		Client:    &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
+		Headers:   make(map[string]string),
+		Randomize: false,
+	}
+	return C.CString(string(newUUID))
 }
 
 //export request
@@ -142,19 +139,19 @@ func request(params *C.char) *C.char {
 		}
 	}
 	if data.RequestType == "GET" {
-		req,err = http.NewRequest("GET", data.Paramters.URL, nil)
+		req, err = http.NewRequest("GET", data.Paramters.URL, nil)
 		check(err)
-	} else if data.RequestType == "POST" {
-		req,err = http.NewRequest("POST", data.Paramters.URL, nil)
+	} else if data.RequestType == "POST" || data.RequestType == "PUT" {
+		req, err = http.NewRequest(data.RequestType, data.Paramters.URL, nil)
 		check(err)
 		if len(data.Paramters.Form) != 0 {
 			url := url.Values{}
 			for key, value := range data.Paramters.Form {
 				url.Add(key, value)
 			}
-			req,_ = http.NewRequest("POST", data.Paramters.URL, bytes.NewBufferString(url.Encode()))
+			req, _ = http.NewRequest(data.RequestType, data.Paramters.URL, bytes.NewBufferString(url.Encode()))
 		} else if data.Paramters.Json != "" {
-			req,_ = http.NewRequest("POST", data.Paramters.URL, bytes.NewBuffer([]byte(data.Paramters.Json)))
+			req, _ = http.NewRequest(data.RequestType, data.Paramters.URL, bytes.NewBuffer([]byte(data.Paramters.Json)))
 		}
 	}
 	req.Header = http.Header{
@@ -220,5 +217,5 @@ func request(params *C.char) *C.char {
 }
 
 func main() {
-	
+
 }
