@@ -33,6 +33,7 @@ var cleanTransport = &http.Transport{}
 type Session struct {
 	Client    *http.Client
 	Headers   map[string]string
+	Cookies   map[string]string
 	Randomize bool
 }
 
@@ -61,6 +62,11 @@ type sessionParamters struct {
 type headerChange struct {
 	Session string            `json:"session"`
 	Headers map[string]string `json:"headers"`
+}
+
+type cookieChange struct {
+	Session string            `json:"session"`
+	Cookies map[string]string `json:"cookies"`
 }
 
 func createTransport(proxy string) *http.Transport {
@@ -110,6 +116,29 @@ func removeHeaders(Params *C.char) {
 	}
 }
 
+//export addCookies
+func addCookies(Params *C.char) {
+	var cookieChange cookieChange
+	json.Unmarshal([]byte(C.GoString(Params)), &cookieChange)
+	session := cookieChange.Session
+	cookies := cookieChange.Cookies
+	for key, value := range cookies {
+		Sessions[session].Cookies[key] = value
+	}
+
+}
+
+//export removeCookies
+func removeCookies(Params *C.char) {
+	var cookieChange cookieChange
+	json.Unmarshal([]byte(C.GoString(Params)), &cookieChange)
+	session := cookieChange.Session
+	cookies := cookieChange.Cookies
+	for key, _ := range cookies {
+		delete(Sessions[session].Cookies, key)
+	}
+}
+
 //export createSession
 func createSession(proxy *C.char) *C.char {
 	proxy_ := C.GoString(proxy)
@@ -119,6 +148,7 @@ func createSession(proxy *C.char) *C.char {
 		Client:    &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
 		Headers:   make(map[string]string),
 		Randomize: false,
+		Cookies:   make(map[string]string),
 	}
 	return C.CString(string(newUUID))
 }
@@ -194,6 +224,9 @@ func request(params *C.char) *C.char {
 	}
 	if len(data.Paramters.Form) != 0 {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	for k, v := range Sessions[data.Session].Cookies {
+		req.AddCookie(&http.Cookie{Name: k, Value: v})
 	}
 	resp, err := client.Do(req)
 	check(err)

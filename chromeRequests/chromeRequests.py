@@ -105,6 +105,10 @@ class Session:
         self.addHeaders.restype = ctypes.c_void_p
         self.removeHeaders = library.removeHeaders
         self.removeHeaders.restype = ctypes.c_void_p
+        self.addCookies = library.addCookies
+        self.addCookies.restype = ctypes.c_void_p
+        self.removeCookies = library.removeCookies
+        self.removeCookies.restype = ctypes.c_void_p
         self.uuid = pullFromMem(self.session(proxy.encode('utf-8')))
 
     def setProxy(self, proxy):
@@ -114,6 +118,20 @@ class Session:
         }
         load = json.dumps(payload).encode('utf-8')
         self.changeProxy(load)
+
+    def setCookies(self,cookies):
+        payload = {
+            "session": self.uuid,
+            "cookies": cookies,
+        }
+        self.addCookies(json.dumps(payload).encode('utf-8'), self.uuid)
+
+    def delCookies(self,cookies):
+        payload = {
+            "Session": self.uuid,
+            "Cookies": cookies,
+        }
+        self.removeCookies(json.dumps(payload).encode('utf-8'), self.uuid)
 
     def setHeaders(self, headers):
         payload = {

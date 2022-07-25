@@ -71,6 +71,8 @@ extern "C" {
 extern __declspec(dllexport) void changeProxy(char* params);
 extern __declspec(dllexport) void addHeaders(char* Params);
 extern __declspec(dllexport) void removeHeaders(char* Params);
+extern __declspec(dllexport) void addCookies(char* Params);
+extern __declspec(dllexport) void removeCookies(char* Params);
 extern __declspec(dllexport) char* createSession(char* proxy);
 extern __declspec(dllexport) char* request(char* params);
 
