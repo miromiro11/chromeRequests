@@ -42,15 +42,17 @@ type Response struct {
 	Body       string
 	Cookies    map[string]string
 	Headers    map[string]string
+	Url        string
 }
 
 type RequestParameters struct {
-	URL     string            `json:"url"`
-	Proxy   string            `json:"proxy"`
-	Headers map[string]string `json:"headers"`
-	Form    map[string]string `json:"FORM"`
-	Json    string            `json:"JSON"`
-	Cookies map[string]string `json:"cookies"`
+	URL       string            `json:"url"`
+	Proxy     string            `json:"proxy"`
+	Headers   map[string]string `json:"headers"`
+	Form      map[string]string `json:"FORM"`
+	Json      string            `json:"JSON"`
+	Cookies   map[string]string `json:"cookies"`
+	Redirects bool              `json:"redirects"`
 }
 
 type sessionParamters struct {
@@ -184,6 +186,11 @@ func request(params *C.char) *C.char {
 			Value: v,
 		})
 	}
+	if !data.Paramters.Redirects {
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	resp, err := client.Do(req)
 	check(err)
 	defer resp.Body.Close()
@@ -198,10 +205,11 @@ func request(params *C.char) *C.char {
 	for _, cookie := range cookies {
 		cookieMap[cookie.Name] = cookie.Value
 	}
-	response := Response{resp.StatusCode, string(body), cookieMap, headersMap}
+	response := Response{resp.StatusCode, string(body), cookieMap, headersMap, resp.Request.URL.String()}
 	json, _ := json.Marshal(response)
 	check(err)
 	client.Transport = cleanTransport
+	client.CheckRedirect = nil
 	return C.CString(string(json))
 }
 

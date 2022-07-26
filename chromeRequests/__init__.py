@@ -6,7 +6,7 @@ import ctypes
 
 globalLibrary = None
 
-def loadLibrary(pathToLibrary) -> None:
+def loadLibrary(pathToLibrary):
     global globalLibrary
     globalLibrary = ctypes.cdll.LoadLibrary(pathToLibrary)
     print("Library Loaded Successfully")

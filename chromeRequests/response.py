@@ -7,6 +7,7 @@ class Response:
         self.text = payload["Body"]
         self.cookies = payload["Cookies"]
         self.headers = payload["Headers"]
+        self.url = payload["Url"]
 
     def json(self):
         try:

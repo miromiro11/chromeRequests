@@ -52,8 +52,8 @@ class Session:
                 "url": url,
             }
         }
-        allowedGetParams = ['proxy', 'headers', "cookies"]
-        allowedPostParams = ['json', 'proxy', 'headers', 'data', "cookies"]
+        allowedGetParams = ['proxy', 'headers', "cookies","allow_redirects"]
+        allowedPostParams = ['json', 'proxy', 'headers', 'data', "cookies","allow_redirects"]
         params = allowedGetParams if requestType == "GET" else allowedPostParams
         for item in kwargs:
             if not item in params:
@@ -62,6 +62,7 @@ class Session:
         payload['paramters']['headers'].update(self.headers.get_dict())
         payload['paramters']['proxy'] = kwargs.get("proxy", "")
         payload['paramters']['Cookies'] = kwargs.get("cookies", {})
+        payload['paramters']['Redirects'] = kwargs.get("allow_redirects", True)
         payload['paramters']['Cookies'].update(self.cookies.get_dict())
         if requestType == "POST" or requestType == "PUT":
             payload['paramters']['FORM'] = kwargs.get("data", [])
