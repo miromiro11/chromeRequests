@@ -1,21 +1,33 @@
 import chromeRequests
+import requests
+import time
 
+chromeRequests.loadLibrary("./GoLangSource/library.so")     
 
-chromeRequests.loadLibrary("./GoLangSource/library.so")
+session = chromeRequests.Session()
 
-session = chromeRequests.chromeRequests.Session()
-session.addCookies({
-    "name": "cookie1",
-    "value": "value1",
-    "domain": "www.google.com",
-    "path": "/",
-    "secure": False,
-})
+def testCase(session):
+    start = time.time()
+    session.get("https://www.facebook.com")
+    end = time.time()
+    print("Time taken: ", end - start)
 
-session.removeCookies({
-    "name": "cookie1",
-})
+def sesionCreation(libary):
+    start = time.time()
+    libary.Session()
+    end = time.time()
+    print("Time taken: ", end - start)
 
-resp = session.get("https://www.httpbin.org/get", data = {"test":"test"})
+print("Testing session creation speed with requests")
+sesionCreation(requests)
+print("Testing session creation speed with chromeRequests")
+sesionCreation(chromeRequests)
 
-print(resp.text)
+print("==========================================================")
+
+requestsSession = requests.Session()
+chromeRequestsSession = chromeRequests.Session()
+print("Testing session speed with requests")
+testCase(requestsSession)
+print("Testing session speed with chromeRequests")
+testCase(chromeRequestsSession)

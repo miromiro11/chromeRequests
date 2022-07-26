@@ -50,6 +50,7 @@ type RequestParameters struct {
 	Headers map[string]string `json:"headers"`
 	Form    map[string]string `json:"FORM"`
 	Json    string            `json:"JSON"`
+	Cookies map[string]string `json:"cookies"`
 }
 
 type sessionParamters struct {
@@ -92,51 +93,6 @@ func changeProxy(params *C.char) {
 	proxy := sessionParameters.Proxy
 	session := sessionParameters.Session
 	Sessions[session].Client.Transport = m.ConfigureTransport(createTransport(proxy))
-}
-
-//export addHeaders
-func addHeaders(Params *C.char) {
-	var sessionParameters headerChange
-	json.Unmarshal([]byte(C.GoString(Params)), &sessionParameters)
-	session := sessionParameters.Session
-	headers := sessionParameters.Headers
-	for key, value := range headers {
-		Sessions[session].Headers[key] = value
-	}
-}
-
-//export removeHeaders
-func removeHeaders(Params *C.char) {
-	var sessionParameters headerChange
-	json.Unmarshal([]byte(C.GoString(Params)), &sessionParameters)
-	session := sessionParameters.Session
-	headers := sessionParameters.Headers
-	for key, _ := range headers {
-		delete(Sessions[session].Headers, key)
-	}
-}
-
-//export addCookies
-func addCookies(Params *C.char) {
-	var cookieChange cookieChange
-	json.Unmarshal([]byte(C.GoString(Params)), &cookieChange)
-	session := cookieChange.Session
-	cookies := cookieChange.Cookies
-	for key, value := range cookies {
-		Sessions[session].Cookies[key] = value
-	}
-
-}
-
-//export removeCookies
-func removeCookies(Params *C.char) {
-	var cookieChange cookieChange
-	json.Unmarshal([]byte(C.GoString(Params)), &cookieChange)
-	session := cookieChange.Session
-	cookies := cookieChange.Cookies
-	for key, _ := range cookies {
-		delete(Sessions[session].Cookies, key)
-	}
 }
 
 //export createSession
@@ -213,11 +169,8 @@ func request(params *C.char) *C.char {
 	}
 	if data.Paramters.Headers != nil {
 		for k, v := range data.Paramters.Headers {
-			req.Header.Add(k, v)
+			req.Header.Set(k, v)
 		}
-	}
-	for k, v := range Sessions[data.Session].Headers {
-		req.Header.Add(k, v)
 	}
 	if data.Paramters.Json != "" {
 		req.Header.Set("Content-Type", "application/json")
@@ -225,8 +178,11 @@ func request(params *C.char) *C.char {
 	if len(data.Paramters.Form) != 0 {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-	for k, v := range Sessions[data.Session].Cookies {
-		req.AddCookie(&http.Cookie{Name: k, Value: v})
+	for k, v := range data.Paramters.Cookies {
+		req.AddCookie(&http.Cookie{
+			Name:  k,
+			Value: v,
+		})
 	}
 	resp, err := client.Do(req)
 	check(err)

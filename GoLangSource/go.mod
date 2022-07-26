@@ -9,7 +9,7 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.3.0 // direct
 	github.com/klauspost/compress v1.15.4 // indirect
 	github.com/saucesteals/utls v1.1.2-0.20220526033452-2e6d7376b70a // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
