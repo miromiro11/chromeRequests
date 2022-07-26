@@ -81,7 +81,7 @@ session.cookies.get_dict()
 ## To do
 
 - [ ] Speed Improvement
-- [ ] Same syntax as pythons [Request Library](https://pypi.org/project/requests/)
+- [x] Same syntax as pythons [Request Library](https://pypi.org/project/requests/)
 
 ## Contributing
 
