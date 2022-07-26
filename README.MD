@@ -13,7 +13,7 @@ Instll chromeRequests using pip
 ## API Reference
 
 ```py
-from chromeRequests import chromeRequests
+import chromeRequests
 
 chromeRequests.loadLibrary("./library.so") #this is necessary, download from GoLangSource folder.
 
@@ -37,7 +37,7 @@ response = chromeRequests.post(
     json = {"foo":"bar"},
     data = {"foo":"bar"}
 )
-
+response.json()
 cookies = response.cookies
 headers = response.headers
 status = response.status_code
@@ -56,13 +56,17 @@ response = chromeRequests.put(
 
 session = chromeRequests.Session()
 
-#sessions functions
-
-session.setHeaders({"foo":"bar"})
-
 session.setProxy("http://user:password@host:port")
 
-session.delHeaders({"test":""})
+session.headers.update({
+  "foo":"bar"
+})
+
+session.headers.get_dict()
+
+session.cookies.set(name,value)
+
+session.cookies.get_dict()
 
 ```
 
