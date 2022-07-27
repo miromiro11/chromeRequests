@@ -1,0 +1,33 @@
+name: "Build Binaries"
+on:
+  workflow_dispatch:
+jobs:
+  package:
+    strategy:
+      matrix:
+        include:
+          - platform: macos-latest
+            arch: arm64
+            file: browser.dmg
+          - platform: windows-latest
+            arch: amd64
+            file: DD Browser.exe
+  runs-on: ${{ matrix.platform }}
+  steps:
+    - uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.18
+    - name: Build Binaries
+        run: |
+          go build -buildmode=c-shared -o ./compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
+        env:
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 1
+    - name: upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform }}
+          path: ./compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
+    
