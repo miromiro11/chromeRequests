@@ -22,7 +22,7 @@ jobs:
           go-version: 1.18
       - name: Build Binaries
         working-directory: ./GoLangSource
-        run: go build -buildmode=c-shared -o ./compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
+        run: go build -buildmode=c-shared -o ../compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
         env:
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 1
