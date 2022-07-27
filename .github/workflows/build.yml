@@ -20,6 +20,8 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.18
+      - name: Switch to Go directory
+        run: cd ./GoLangSource
       - name: Build Binaries
         run: go build -buildmode=c-shared -o ./compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
         env:
