@@ -25,6 +25,8 @@ class Session:
         self.__changeProxy = library.changeProxy
         self.__changeProxy.restype = ctypes.c_void_p
         self.__uuid = pullFromMem(self.__session(proxy.encode('utf-8'))) if not oneTime else ""
+        self.__closeSession = library.closeSession
+        self.__closeSession.restype = ctypes.c_void_p
         self.cookies = Cookies()
         self.headers = Headers()
 
@@ -85,7 +87,7 @@ class Session:
         return Response(pullFromMem(response))
     
     def close(self):
-        return True
+        self.__closeSession(self.__uuid.encode('utf-8'))
 
     def __enter__(self):
         return self

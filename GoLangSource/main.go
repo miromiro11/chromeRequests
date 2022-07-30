@@ -111,6 +111,11 @@ func createSession(proxy *C.char) *C.char {
 	return C.CString(string(newUUID))
 }
 
+//export closeSession
+func closeSession(uuid *C.char) {
+	Sessions[C.GoString(uuid)].Client.CloseIdleConnections()
+}
+
 //export request
 func request(params *C.char) *C.char {
 	var client *http.Client
