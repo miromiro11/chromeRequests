@@ -1,4 +1,4 @@
-package chromeRequests
+package main
 
 import (
 	"C"
@@ -210,4 +210,8 @@ func request(cParams *C.char) *C.char {
 		Headers:    headersMap,
 		Url:        resp.Request.URL.String(),
 	})
+}
+
+func main() {
+
 }
