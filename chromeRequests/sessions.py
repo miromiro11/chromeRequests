@@ -39,18 +39,18 @@ class Session:
         self.__changeProxy(load)
 
     def request(self,load):
-        resposne = self.__request(load)
-        toReturn = Response(pullFromMem(resposne))
+        response = self.__request(load)
+        toReturn = Response(pullFromMem(response))
         cookies = toReturn.cookies
         self.cookies.update(cookies)
-        return resposne
+        return response
 
     def createPayload(self, requestType: str, url: str, **kwargs) -> dict:
         payload = {
             "session": self.__uuid,
             "requestType": requestType,
             "url": url,
-            "paramters": {
+            "parameters": {
                 "url": url,
             }
         }
@@ -60,15 +60,15 @@ class Session:
         for item in kwargs:
             if not item in params:
                 raise Exception(f"{item} is not an accepted PARAM")
-        payload['paramters']['headers'] = kwargs.get("headers", {})
-        payload['paramters']['headers'].update(self.headers.get_dict())
-        payload['paramters']['proxy'] = kwargs.get("proxy", "")
-        payload['paramters']['Cookies'] = kwargs.get("cookies", {})
-        payload['paramters']['Redirects'] = kwargs.get("allow_redirects", True)
-        payload['paramters']['Cookies'].update(self.cookies.get_dict())
+        payload['parameters']['headers'] = kwargs.get("headers", {})
+        payload['parameters']['headers'].update(self.headers.get_dict())
+        payload['parameters']['proxy'] = kwargs.get("proxy", "")
+        payload['parameters']['Cookies'] = kwargs.get("cookies", {})
+        payload['parameters']['Redirects'] = kwargs.get("allow_redirects", True)
+        payload['parameters']['Cookies'].update(self.cookies.get_dict())
         if requestType == "POST" or requestType == "PUT":
-            payload['paramters']['FORM'] = kwargs.get("data", [])
-            payload['paramters']['Json'] = json.dumps(kwargs.get("json", {}))
+            payload['parameters']['FORM'] = kwargs.get("data", [])
+            payload['parameters']['Json'] = json.dumps(kwargs.get("json", {}))
         return payload
         
     def get(self, url: str, **kwargs) -> Response:

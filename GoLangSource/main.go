@@ -1,150 +1,125 @@
 package main
 
-// #include <stdio.h>
-// #include <stdlib.h>
-//
-// static void myprint(char* s) {
-//   printf("%s\n", s);
-// }
-
 import (
 	"C"
+	"bytes"
+	"chromeRequests/models"
+	"chromeRequests/utils"
 	"encoding/json"
-	"net/url"
-
+	"fmt"
 	"github.com/google/uuid"
 	http "github.com/saucesteals/fhttp"
 	"github.com/saucesteals/mimic"
-)
-
-import (
-	"bytes"
-	"fmt"
 	"io/ioutil"
+	"net/url"
 )
 
-var Sessions = make(map[string]Session)
+var Sessions = make(map[string]models.Session)
 var userAgent = fmt.Sprintf("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s Safari/537.36", m.Version())
 var latestVersion = mimic.MustGetLatestVersion(mimic.PlatformWindows)
 var m, _ = mimic.Chromium(mimic.BrandChrome, latestVersion)
-var globalHeaders = make(map[string]string)
 var cleanTransport = &http.Transport{}
 
-type Session struct {
-	Client    *http.Client
-	Headers   map[string]string
-	Cookies   map[string]string
-	Randomize bool
-}
-
-type Response struct {
-	StatusCode int
-	Body       string
-	Cookies    map[string]string
-	Headers    map[string]string
-	Url        string
-}
-
-type RequestParameters struct {
-	URL       string            `json:"url"`
-	Proxy     string            `json:"proxy"`
-	Headers   map[string]string `json:"headers"`
-	Form      map[string]string `json:"FORM"`
-	Json      string            `json:"JSON"`
-	Cookies   map[string]string `json:"cookies"`
-	Redirects bool              `json:"redirects"`
-}
-
-type sessionParamters struct {
-	Session     string            `json:"session"`
-	RequestType string            `json:"requestType"`
-	Paramters   RequestParameters `json:"paramters"`
-	Proxy       string            `json:"proxy"`
-}
-
-type headerChange struct {
-	Session string            `json:"session"`
-	Headers map[string]string `json:"headers"`
-}
-
-type cookieChange struct {
-	Session string            `json:"session"`
-	Cookies map[string]string `json:"cookies"`
-}
-
-func createTransport(proxy string) *http.Transport {
-	if len(proxy) != 0 {
-		proxyUrl, err := url.Parse(proxy)
-		check(err)
-		return &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
-	} else {
-		return &http.Transport{}
-	}
-}
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 //export changeProxy
-func changeProxy(params *C.char) {
-	var sessionParameters sessionParamters
-	json.Unmarshal([]byte(C.GoString(params)), &sessionParameters)
+func changeProxy(params *C.char) *C.char {
+	var sessionParameters models.SessionParameters
+	err := json.Unmarshal([]byte(C.GoString(params)), &sessionParameters)
+	if err != nil {
+		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+	}
 	proxy := sessionParameters.Proxy
-	session := sessionParameters.Session
-	Sessions[session].Client.Transport = m.ConfigureTransport(createTransport(proxy))
+	sessionId := sessionParameters.Session
+
+	if session, exists := Sessions[sessionId]; exists {
+		transport, err := utils.CreateTransport(proxy)
+		if err != nil {
+			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		}
+
+		session.Client.Transport = m.ConfigureTransport(transport)
+	}
+
+	return utils.CreateCResponse(&models.Response{})
 }
 
 //export createSession
-func createSession(proxy *C.char) *C.char {
-	proxy_ := C.GoString(proxy)
-	newUUID_ := uuid.New()
-	newUUID := newUUID_.String()
-	Sessions[string(newUUID)] = Session{
-		Client:    &http.Client{Transport: m.ConfigureTransport(createTransport(proxy_))},
+func createSession(cProxy *C.char) *C.char {
+	proxy := C.GoString(cProxy)
+	sessionId := uuid.NewString()
+
+	transport, err := utils.CreateTransport(proxy)
+	if err != nil {
+		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+	}
+
+	Sessions[sessionId] = models.Session{
+		Client:    &http.Client{Transport: m.ConfigureTransport(transport)},
 		Headers:   make(map[string]string),
 		Randomize: false,
 		Cookies:   make(map[string]string),
 	}
-	return C.CString(string(newUUID))
+	return utils.CreateCResponse(&models.Response{SessionId: sessionId})
 }
 
 //export closeSession
-func closeSession(uuid *C.char) {
-	Sessions[C.GoString(uuid)].Client.CloseIdleConnections()
+func closeSession(uuid *C.char) *C.char {
+	if session, exists := Sessions[C.GoString(uuid)]; exists {
+		session.Client.CloseIdleConnections()
+	} else {
+		return utils.CreateCResponse(&models.Response{Error: "session does not exists"})
+	}
+
+	return utils.CreateCResponse(&models.Response{})
 }
 
 //export request
-func request(params *C.char) *C.char {
+func request(cParams *C.char) *C.char {
 	var client *http.Client
 	var req *http.Request
-	var err error
-	params_ := C.GoString(params)
-	data := sessionParamters{}
-	json.Unmarshal([]byte(params_), &data)
+	params := C.GoString(cParams)
+	data := models.SessionParameters{}
+	err := json.Unmarshal([]byte(params), &data)
+	if err != nil {
+		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+	}
+
 	if data.Session != "" {
 		client = Sessions[data.Session].Client
 	} else {
+		transport, err := utils.CreateTransport("")
+		if err != nil {
+			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		}
+
 		client = &http.Client{
-			Transport: m.ConfigureTransport(createTransport("")),
+			Transport: m.ConfigureTransport(transport),
 		}
 	}
 	if data.RequestType == "GET" {
-		req, err = http.NewRequest("GET", data.Paramters.URL, nil)
-		check(err)
+		req, err = http.NewRequest("GET", data.Parameters.URL, nil)
+		if err != nil {
+			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		}
 	} else if data.RequestType == "POST" || data.RequestType == "PUT" {
-		req, err = http.NewRequest(data.RequestType, data.Paramters.URL, nil)
-		check(err)
-		if len(data.Paramters.Form) != 0 {
-			url := url.Values{}
-			for key, value := range data.Paramters.Form {
-				url.Add(key, value)
+		req, err = http.NewRequest(data.RequestType, data.Parameters.URL, nil)
+		if err != nil {
+			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		}
+
+		if len(data.Parameters.Form) != 0 {
+			formData := url.Values{}
+			for key, value := range data.Parameters.Form {
+				formData.Add(key, value)
 			}
-			req, _ = http.NewRequest(data.RequestType, data.Paramters.URL, bytes.NewBufferString(url.Encode()))
-		} else if data.Paramters.Json != "" {
-			req, _ = http.NewRequest(data.RequestType, data.Paramters.URL, bytes.NewBuffer([]byte(data.Paramters.Json)))
+			req, err = http.NewRequest(data.RequestType, data.Parameters.URL, bytes.NewBufferString(formData.Encode()))
+			if err != nil {
+				return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			}
+		} else if data.Parameters.Json != "" {
+			req, err = http.NewRequest(data.RequestType, data.Parameters.URL, bytes.NewBuffer([]byte(data.Parameters.Json)))
+			if err != nil {
+				return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			}
 		}
 	}
 	req.Header = http.Header{
@@ -171,51 +146,70 @@ func request(params *C.char) *C.char {
 		},
 		http.PHeaderOrderKey: m.PseudoHeaderOrder(),
 	}
-	if data.Paramters.Proxy != "" {
-		client.Transport = m.ConfigureTransport(createTransport(data.Paramters.Proxy))
+	if data.Parameters.Proxy != "" {
+		transport, err := utils.CreateTransport(data.Parameters.Proxy)
+		if err != nil {
+			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		}
+		client.Transport = m.ConfigureTransport(transport)
 	}
-	if data.Paramters.Headers != nil {
-		for k, v := range data.Paramters.Headers {
+	if data.Parameters.Headers != nil {
+		for k, v := range data.Parameters.Headers {
 			req.Header.Set(k, v)
 		}
 	}
-	if data.Paramters.Json != "" {
+
+	if data.Parameters.Json != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if len(data.Paramters.Form) != 0 {
+
+	if len(data.Parameters.Form) != 0 {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-	for k, v := range data.Paramters.Cookies {
+
+	for k, v := range data.Parameters.Cookies {
 		req.AddCookie(&http.Cookie{
 			Name:  k,
 			Value: v,
 		})
 	}
-	if !data.Paramters.Redirects {
+	if !data.Parameters.Redirects {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}
 	}
+
 	resp, err := client.Do(req)
-	check(err)
+	if err != nil {
+		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+	}
+
 	defer resp.Body.Close()
-	cookies := resp.Cookies()
 	body, err := ioutil.ReadAll(resp.Body)
-	check(err)
+	if err != nil {
+		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+	}
+
 	headersMap := make(map[string]string)
 	for key, value := range resp.Header {
 		headersMap[key] = value[0]
 	}
+
 	cookieMap := make(map[string]string)
-	for _, cookie := range cookies {
+	for _, cookie := range resp.Cookies() {
 		cookieMap[cookie.Name] = cookie.Value
 	}
-	response := Response{resp.StatusCode, string(body), cookieMap, headersMap, resp.Request.URL.String()}
-	json, _ := json.Marshal(response)
-	check(err)
+
 	client.Transport = cleanTransport
 	client.CheckRedirect = nil
-	return C.CString(string(json))
+
+	return utils.CreateCResponse(&models.Response{
+		StatusCode: resp.StatusCode,
+		Body:       string(body),
+		Cookies:    cookieMap,
+		Headers:    headersMap,
+		Url:        resp.Request.URL.String(),
+	})
 }
 
 func main() {
