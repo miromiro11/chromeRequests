@@ -24,7 +24,7 @@ class Session:
         self.__request.restype = ctypes.c_void_p
         self.__changeProxy = library.changeProxy
         self.__changeProxy.restype = ctypes.c_void_p
-        self.__uuid = pullFromMem(self.__session(proxy.encode('utf-8'))) if not oneTime else ""
+        self.__uuid = json.loads(pullFromMem(self.__session(proxy.encode('utf-8'))) if not oneTime else "")['SessionId']
         self.__closeSession = library.closeSession
         self.__closeSession.restype = ctypes.c_void_p
         self.cookies = Cookies()
@@ -40,10 +40,12 @@ class Session:
 
     def request(self,load):
         response = self.__request(load)
-        toReturn = Response(pullFromMem(response))
+        json_ = json.loads(pullFromMem(response))
+        checkError(json_)
+        toReturn = Response(json_)
         cookies = toReturn.cookies
         self.cookies.update(cookies)
-        return response
+        return toReturn
 
     def createPayload(self, requestType: str, url: str, **kwargs) -> dict:
         payload = {
@@ -65,7 +67,7 @@ class Session:
         payload['parameters']['proxy'] = kwargs.get("proxy", "")
         payload['parameters']['Cookies'] = kwargs.get("cookies", {})
         payload['parameters']['Redirects'] = kwargs.get("allow_redirects", True)
-        payload['parameters']['Cookies'].update(self.cookies.get_dict())
+        payload['parameters']['Cookies'].update(self.cookies.get_dict())    
         if requestType == "POST" or requestType == "PUT":
             payload['parameters']['FORM'] = kwargs.get("data", [])
             payload['parameters']['Json'] = json.dumps(kwargs.get("json", {}))
@@ -74,17 +76,17 @@ class Session:
     def get(self, url: str, **kwargs) -> Response:
         payload = self.createPayload("GET", url, **kwargs)
         response = self.request(json.dumps(payload).encode('utf-8'))
-        return Response(pullFromMem(response))
+        return response
 
     def post(self, url: str, **kwargs) -> Response:
         payload = self.createPayload("POST", url, **kwargs)
         response = self.request(json.dumps(payload).encode('utf-8'))
-        return Response(pullFromMem(response))
+        return response
     
     def put(self, url:str , **kwargs) -> Response:
         payload = self.createPayload("PUT", url, **kwargs)
         response = self.request(json.dumps(payload).encode('utf-8'))
-        return Response(pullFromMem(response))
+        return response
     
     def close(self):
         self.__closeSession(self.__uuid.encode('utf-8'))
@@ -93,5 +95,6 @@ class Session:
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        if self.__uuid != "":
+            self.close()
         return False

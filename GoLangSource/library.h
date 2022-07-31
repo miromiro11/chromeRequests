@@ -68,9 +68,10 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern __declspec(dllexport) void changeProxy(char* params);
-extern __declspec(dllexport) char* createSession(char* proxy);
-extern __declspec(dllexport) char* request(char* params);
+extern __declspec(dllexport) char* changeProxy(char* params);
+extern __declspec(dllexport) char* createSession(char* cProxy);
+extern __declspec(dllexport) char* closeSession(char* uuid);
+extern __declspec(dllexport) char* request(char* cParams);
 
 #ifdef __cplusplus
 }

@@ -2,7 +2,6 @@ import json as toJson
 
 class Response:
     def __init__(self, payload):
-        payload = toJson.loads(payload)
         self.status_code = payload["StatusCode"]
         self.text = payload["Body"]
         self.cookies = payload["Cookies"]

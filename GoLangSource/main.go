@@ -4,15 +4,33 @@ import (
 	"C"
 	"bytes"
 	"chromeRequests/models"
-	"chromeRequests/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	http "github.com/saucesteals/fhttp"
-	"github.com/saucesteals/mimic"
 	"io/ioutil"
 	"net/url"
+
+	"github.com/google/uuid"
+
+	http "github.com/saucesteals/fhttp"
+	"github.com/saucesteals/mimic"
 )
+
+func CreateCResponse(resp *models.Response) *C.char {
+	errorJson, _ := json.Marshal(resp)
+	return C.CString(string(errorJson))
+}
+
+func CreateTransport(proxy string) (*http.Transport, error) {
+	if len(proxy) != 0 {
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return nil, err
+		}
+		return &http.Transport{Proxy: http.ProxyURL(proxyUrl)}, nil
+	} else {
+		return &http.Transport{}, nil
+	}
+}
 
 var Sessions = make(map[string]models.Session)
 var userAgent = fmt.Sprintf("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s Safari/537.36", m.Version())
@@ -25,21 +43,21 @@ func changeProxy(params *C.char) *C.char {
 	var sessionParameters models.SessionParameters
 	err := json.Unmarshal([]byte(C.GoString(params)), &sessionParameters)
 	if err != nil {
-		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		return CreateCResponse(&models.Response{Error: err.Error()})
 	}
 	proxy := sessionParameters.Proxy
 	sessionId := sessionParameters.Session
 
 	if session, exists := Sessions[sessionId]; exists {
-		transport, err := utils.CreateTransport(proxy)
+		transport, err := CreateTransport(proxy)
 		if err != nil {
-			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			return CreateCResponse(&models.Response{Error: err.Error()})
 		}
 
 		session.Client.Transport = m.ConfigureTransport(transport)
 	}
 
-	return utils.CreateCResponse(&models.Response{})
+	return CreateCResponse(&models.Response{})
 }
 
 //export createSession
@@ -47,9 +65,9 @@ func createSession(cProxy *C.char) *C.char {
 	proxy := C.GoString(cProxy)
 	sessionId := uuid.NewString()
 
-	transport, err := utils.CreateTransport(proxy)
+	transport, err := CreateTransport(proxy)
 	if err != nil {
-		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		return CreateCResponse(&models.Response{Error: err.Error()})
 	}
 
 	Sessions[sessionId] = models.Session{
@@ -58,7 +76,7 @@ func createSession(cProxy *C.char) *C.char {
 		Randomize: false,
 		Cookies:   make(map[string]string),
 	}
-	return utils.CreateCResponse(&models.Response{SessionId: sessionId})
+	return CreateCResponse(&models.Response{SessionId: sessionId})
 }
 
 //export closeSession
@@ -66,10 +84,10 @@ func closeSession(uuid *C.char) *C.char {
 	if session, exists := Sessions[C.GoString(uuid)]; exists {
 		session.Client.CloseIdleConnections()
 	} else {
-		return utils.CreateCResponse(&models.Response{Error: "session does not exists"})
+		return CreateCResponse(&models.Response{Error: "session does not exists"})
 	}
 
-	return utils.CreateCResponse(&models.Response{})
+	return CreateCResponse(&models.Response{})
 }
 
 //export request
@@ -80,15 +98,15 @@ func request(cParams *C.char) *C.char {
 	data := models.SessionParameters{}
 	err := json.Unmarshal([]byte(params), &data)
 	if err != nil {
-		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		return CreateCResponse(&models.Response{Error: err.Error()})
 	}
 
 	if data.Session != "" {
 		client = Sessions[data.Session].Client
 	} else {
-		transport, err := utils.CreateTransport("")
+		transport, err := CreateTransport("")
 		if err != nil {
-			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			return CreateCResponse(&models.Response{Error: err.Error()})
 		}
 
 		client = &http.Client{
@@ -98,12 +116,12 @@ func request(cParams *C.char) *C.char {
 	if data.RequestType == "GET" {
 		req, err = http.NewRequest("GET", data.Parameters.URL, nil)
 		if err != nil {
-			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			return CreateCResponse(&models.Response{Error: err.Error()})
 		}
 	} else if data.RequestType == "POST" || data.RequestType == "PUT" {
 		req, err = http.NewRequest(data.RequestType, data.Parameters.URL, nil)
 		if err != nil {
-			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			return CreateCResponse(&models.Response{Error: err.Error()})
 		}
 
 		if len(data.Parameters.Form) != 0 {
@@ -113,12 +131,12 @@ func request(cParams *C.char) *C.char {
 			}
 			req, err = http.NewRequest(data.RequestType, data.Parameters.URL, bytes.NewBufferString(formData.Encode()))
 			if err != nil {
-				return utils.CreateCResponse(&models.Response{Error: err.Error()})
+				return CreateCResponse(&models.Response{Error: err.Error()})
 			}
 		} else if data.Parameters.Json != "" {
 			req, err = http.NewRequest(data.RequestType, data.Parameters.URL, bytes.NewBuffer([]byte(data.Parameters.Json)))
 			if err != nil {
-				return utils.CreateCResponse(&models.Response{Error: err.Error()})
+				return CreateCResponse(&models.Response{Error: err.Error()})
 			}
 		}
 	}
@@ -147,9 +165,9 @@ func request(cParams *C.char) *C.char {
 		http.PHeaderOrderKey: m.PseudoHeaderOrder(),
 	}
 	if data.Parameters.Proxy != "" {
-		transport, err := utils.CreateTransport(data.Parameters.Proxy)
+		transport, err := CreateTransport(data.Parameters.Proxy)
 		if err != nil {
-			return utils.CreateCResponse(&models.Response{Error: err.Error()})
+			return CreateCResponse(&models.Response{Error: err.Error()})
 		}
 		client.Transport = m.ConfigureTransport(transport)
 	}
@@ -181,13 +199,13 @@ func request(cParams *C.char) *C.char {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		return CreateCResponse(&models.Response{Error: err.Error()})
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return utils.CreateCResponse(&models.Response{Error: err.Error()})
+		return CreateCResponse(&models.Response{Error: err.Error()})
 	}
 
 	headersMap := make(map[string]string)
@@ -202,8 +220,10 @@ func request(cParams *C.char) *C.char {
 
 	client.Transport = cleanTransport
 	client.CheckRedirect = nil
-
-	return utils.CreateCResponse(&models.Response{
+	if data.Session == "" {
+		client.CloseIdleConnections()
+	}
+	return CreateCResponse(&models.Response{
 		StatusCode: resp.StatusCode,
 		Body:       string(body),
 		Cookies:    cookieMap,
@@ -213,5 +233,8 @@ func request(cParams *C.char) *C.char {
 }
 
 func main() {
+	test := `{"session": "", "requestType": "GET", "url": "https://www.facebook.com", "parameters": {"url": "https://www.facebook.com", "headers": {}, "proxy": "", "Cookies": {}, "Redirects": true}}`
+	resp := request(C.CString(test))
+	fmt.Println(C.GoString(resp))
 
 }
