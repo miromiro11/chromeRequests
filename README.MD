@@ -15,27 +15,27 @@ Instll chromeRequests using pip
 ```py
 import chromeRequests
 
-chromeRequests.loadLibrary("./library.so") #this is necessary, download from GoLangSource folder.
+chromeRequests.load_library("./library.so")  # this is necessary, download from go folder.
 
-#get request
+# get request
 
 response = chromeRequests.get(
     "example.com",
-    headers = {
-        "foo":"bar",
+    headers={
+        "foo": "bar",
     },
-    proxy = "http://user:password@host:port" #never tested with passwordless.
+    proxy="http://user:password@host:port"  # never tested with passwordless.
 )
 
-#post request
+# post request
 
 response = chromeRequests.post(
     "example.com",
-    headers = {
-        "foo":"bar",
+    headers={
+        "foo": "bar",
     },
-    json = {"foo":"bar"},
-    data = {"foo":"bar"}
+    json={"foo": "bar"},
+    data={"foo": "bar"}
 )
 response.json()
 cookies = response.cookies
@@ -43,28 +43,28 @@ headers = response.headers
 status = response.status_code
 text = response.text
 
-#put request
+# put request
 response = chromeRequests.put(
     "example.com",
-    headers = {
-        "foo":"bar",
+    headers={
+        "foo": "bar",
     },
-    json = {"foo":"bar"},
-    data = {"foo":"bar"}
+    json={"foo": "bar"},
+    data={"foo": "bar"}
 )
-#session
+# session
 
-session = chromeRequests.Session()
+session = chromeRequests.session()
 
-session.setProxy("http://user:password@host:port")
+session.set_proxy("http://user:password@host:port")
 
 session.headers.update({
-  "foo":"bar"
+    "foo": "bar"
 })
 
 session.headers.get_dict()
 
-session.cookies.set(name,value)
+session.cookies.set(name, value)
 
 session.cookies.get_dict()
 

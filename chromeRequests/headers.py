@@ -1,12 +1,10 @@
-
-
 class Headers:
     def __init__(self):
         self.__headers = {}
-    
-    def update(self,headers: dict) -> None: 
+
+    def update(self, headers: dict) -> None:
         self.__headers.update(headers)
-    
+
     def get_dict(self) -> dict:
         return self.__headers
 

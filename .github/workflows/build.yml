@@ -21,7 +21,7 @@ jobs:
         with:
           go-version: 1.18
       - name: Build Binaries
-        working-directory: ./GoLangSource
+        working-directory: ./go
         run: go build -buildmode=c-shared -o ../compiled/${{ matrix.platform }}-${{ matrix.arch }}.so
         env:
           GOARCH: ${{ matrix.arch }}
