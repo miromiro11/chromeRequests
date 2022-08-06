@@ -2,9 +2,10 @@ import chromeRequests
 import requests
 import time
 
-chromeRequests.loadLibrary("./GoLangSource/library.so")     
+chromeRequests.load_library("./go/library.so")
 
-session = chromeRequests.Session()
+session = chromeRequests.session()
+
 
 def testCase(session):
     start = time.time()
@@ -12,11 +13,13 @@ def testCase(session):
     end = time.time()
     print("Time taken: ", end - start)
 
+
 def sesionCreation(libary):
     start = time.time()
-    libary.Session()
+    libary.session()
     end = time.time()
     print("Time taken: ", end - start)
+
 
 print("Testing session creation speed with requests")
 sesionCreation(requests)
@@ -26,7 +29,7 @@ sesionCreation(chromeRequests)
 print("==========================================================")
 
 requestsSession = requests.Session()
-chromeRequestsSession = chromeRequests.Session()
+chromeRequestsSession = chromeRequests.session()
 print("Testing session speed with requests")
 testCase(requestsSession)
 print("Testing session speed with chromeRequests")
