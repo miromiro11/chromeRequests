@@ -1,12 +1,18 @@
+from typing import OrderedDict
+
+
 class Headers:
     def __init__(self):
-        self.__headers = {}
+        self.__headers = OrderedDict()
 
     def update(self, headers: dict) -> None:
         self.__headers.update(headers)
 
     def get_dict(self) -> dict:
-        return self.__headers
+        ordered = OrderedDict()
+        for key in self.__headers:
+            ordered[key.lower()] = self.__headers[key]
+        return ordered
 
     def clear(self) -> None:
         self.__headers = {}

@@ -8,4 +8,5 @@ type RequestParameters struct {
 	Json      string            `json:"json"`
 	Cookies   map[string]string `json:"cookies"`
 	Redirects bool              `json:"redirects"`
+	HeaderOrder []string         `json:"headerOrder"`
 }

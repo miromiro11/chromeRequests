@@ -5,11 +5,9 @@ import (
 	"bytes"
 	"chromeRequests/models"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
-	"strings"
 
 	"github.com/google/uuid"
 
@@ -119,9 +117,6 @@ func request(cParams *C.char) *C.char {
 			return createCResponse(&models.Response{Error: err.Error()})
 		}
 	}
-	req.Header = http.Header{
-		http.PHeaderOrderKey: m.PseudoHeaderOrder(),
-	}
 
 	if data.Parameters.Proxy != "" {
 		transport, err := createTransport(data.Parameters.Proxy)
@@ -132,16 +127,14 @@ func request(cParams *C.char) *C.char {
 	}
 
 	if data.Parameters.Headers != nil {
-		var headerOrder []string
-		for k, v := range data.Parameters.Headers {
-			if strings.ToLower(k) != "accept-encoding" && strings.ToLower(k) != "content-length" {
-				req.Header.Set(k, v)
-			}
-
-			headerOrder = append(headerOrder, k)
+		req.Header = http.Header{
+			http.PHeaderOrderKey: m.PseudoHeaderOrder(),
 		}
-
-		req.Header[http.HeaderOrderKey] = headerOrder
+		for k, v := range data.Parameters.Headers {
+			req.Header.Add(k, v)
+		}
+		req.Header[http.HeaderOrderKey] = data.Parameters.HeaderOrder
+		
 	}
 
 	for k, v := range data.Parameters.Cookies {
@@ -182,6 +175,9 @@ func request(cParams *C.char) *C.char {
 	if data.SessionId == "" {
 		client.CloseIdleConnections()
 	}
+
+	//fmt.Println( string(body))
+
 	return createCResponse(&models.Response{
 		StatusCode: resp.StatusCode,
 		Body:       string(body),
@@ -220,8 +216,8 @@ func createTransport(proxy string) (*http.Transport, error) {
 }
 
 func main() {
-	seshJson := `{"session":"","requestType":"GET","parameters":{"url":"https://www.facebook.com/","proxy":"http://127.0.0.1:8888","headers":{"user-agent":"Go-http-client/2.0","accept-encoding":""},"FORM":null,"JSON":"","cookies":null,"redirects":true},"proxy":""}`
-	resp := request(C.CString(seshJson))
-	fmt.Println(C.GoString(resp))
+	// seshJson := `{"parameters": {"cookies": {}, "headerOrder": ["User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Connection", "Upgrade-Insecure-Requests", "Cache-Control"], "headers": {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.5", "Cache-Control": "max-age=0", "Connection": "keep-alive", "Upgrade-Insecure-Requests": "1", "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0"}, "proxy": "", "redirects": true, "url": "https://httpbin.org/get"}, "requestType": "GET", "session": "", "url": "https://tls.peet.ws/api/all"}`
+	// request(C.CString(seshJson))
+	// //fmt.Println(C.GoString(resp))
 
 }

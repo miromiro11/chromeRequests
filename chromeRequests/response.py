@@ -3,11 +3,11 @@ import json as toJson
 
 class Response:
     def __init__(self, payload):
-        self.status_code = payload["statusCode"]
-        self.text = payload["body"]
-        self.cookies = payload["cookies"]
-        self.headers = payload["headers"]
-        self.url = payload["url"]
+        self.status_code = payload.get("statusCode", 0)
+        self.text = payload.get("body", "")
+        self.cookies = payload.get("cookies", {})
+        self.headers = payload.get("headers", {})
+        self.url = payload.get("url", "")
 
     def json(self):
         try:
